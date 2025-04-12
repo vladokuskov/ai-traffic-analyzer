@@ -1,4 +1,4 @@
-# ONLY FOR MODEL LEARNING
+# ONLY FOR GATHERING DATA, NOT USED IN RUNNING APPLICATION
 
 import logging
 import pandas as pd
