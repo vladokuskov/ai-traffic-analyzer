@@ -1,3 +1,5 @@
+# ONLY FOR MODEL LEARNING
+
 import logging
 import pandas as pd
 from scapy.all import sniff
@@ -7,7 +9,7 @@ from scapy.layers.inet import IP
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def capture_traffic(interface='en0', duration=10):
+def capture_traffic(interface='en0', duration=30):
     logging.info(f"Using interface: {interface} for {duration} seconds.")
     packets = sniff(iface=interface, timeout=duration)
     logging.info(f"Intercepting done. Received {len(packets)} packets.")
@@ -34,6 +36,8 @@ if __name__ == "__main__":
     captured_packets = capture_traffic()
     print("Processing data...")
     df = process_data(captured_packets)
+    df.sort_values(by='timestamp', inplace=True)
+
     print("Saving data...")
-    df.to_csv("captured_traffic.csv", index=False)
+    df.to_csv("model_data/captured_traffic.csv", index=False)
     print("Data saved into 'captured_traffic.csv'")
