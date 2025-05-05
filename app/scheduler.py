@@ -57,7 +57,7 @@ def process_data(packets):
     for packet in packets:
         if packet.haslayer(IP):
             packet_info = {
-                'length': len(packet),
+                'packet_length': len(packet),
                 'timestamp': packet.time,
                 'source_ip': packet[IP].src,
                 'destination_ip': packet[IP].dst,
@@ -65,7 +65,6 @@ def process_data(packets):
             }
             rows.append(packet_info)
     return pd.DataFrame(rows)
-
 
 def run_detection(interface, duration=30):
     """
@@ -81,10 +80,13 @@ def run_detection(interface, duration=30):
     real_time_data = process_data(captured_packets)
 
     # Load or train the ARIMA model
-    model = load_or_train_model(real_time_data['length'])
+    model = load_or_train_model(real_time_data['packet_length'], 'model_data/model_arima.pkl')
 
     # Perform anomaly detection
-    pred, real, err, err_pct = real_time_anomaly_detection(model, real_time_data)
+    pred, real, err, err_pct, is_anomaly = real_time_anomaly_detection(model, real_time_data)
+
+    # ONLY FOR DEBUG
+   #  plot_detection_results(real_time_data, predicted_values=pred, is_anomaly=is_anomaly)
 
     # Prepare document for MongoDB, ensuring values are in native Python types
     doc = {

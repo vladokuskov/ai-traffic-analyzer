@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 # Real-Time Anomaly Detection with ARIMA
-def real_time_anomaly_detection(model_arima, real_time_data, window=10, confid_interval=2):
+def real_time_anomaly_detection(model_arima, real_time_data, window=30, confid_interval=2):
     """
     Perform real-time anomaly detection using a trained ARIMA model.
     It compares the predicted value with the actual value and checks if the error exceeds the threshold.
@@ -36,11 +36,11 @@ def real_time_anomaly_detection(model_arima, real_time_data, window=10, confid_i
     predicted_value = int(predicted.iloc[0])  # Get the predicted value
 
     # Get actual value from the last row
-    real_value = real_time_data['length'].iloc[-1]
+    real_value = real_time_data['packet_length'].iloc[-1]
     error = real_value - predicted_value  # Calculate error
     error_percentage = (error / predicted_value) * 100  # Calculate error percentage
 
-    recent_window = real_time_data['length'].tail(window)  # Get the most recent data
+    recent_window = real_time_data['packet_length'].tail(window)  # Get the most recent data
 
     std_dev = np.std(recent_window) if len(recent_window) > 1 else 0  # Calculate standard deviation
 
