@@ -14,34 +14,6 @@ warnings.filterwarnings("ignore", category=UserWarning, module='statsmodels')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-# Anomaly Detection Function
-def detect_anomalies(df, window, confid_interval=2):
-    """
-    Detect anomalies in the given DataFrame based on predicted vs actual values.
-    It calculates error and sets thresholds for anomaly detection based on a rolling window of errors.
-    Arguments:
-    df -- The DataFrame containing the actual and predicted data.
-    window -- The rolling window size for calculating error metrics.
-    confid_interval -- The confidence interval used to set the anomaly detection threshold.
-
-    Returns:
-    The modified DataFrame with anomaly detection results.
-    """
-    df.fillna(0, inplace=True)  # Fill NaN values with 0
-    df['error'] = df['length'] - df['predicted']  # Calculate error (actual - predicted)
-    df['error_pct'] = (df['error'] / df['predicted']) * 100  # Calculate error percentage
-    df['err_meanval'] = df['error'].rolling(window=window).mean()  # Rolling mean of errors
-    df['err_deviation'] = df['error'].rolling(window=window).std()  # Rolling standard deviation of errors
-    df['-lim'] = df['err_meanval'] - (confid_interval * df['err_deviation'])  # Lower limit for anomaly
-    df['+lim'] = df['err_meanval'] + (confid_interval * df['err_deviation'])  # Upper limit for anomaly
-    df['anomaly_points'] = np.where(
-        (df['error'] > df['+lim']) | (df['error'] < df['-lim']),
-        df['length'],
-        np.nan
-    )  # Mark points as anomalies if outside the limits
-    return df
-
-
 # Real-Time Anomaly Detection with ARIMA
 def real_time_anomaly_detection(model_arima, real_time_data, window=10, confid_interval=2):
     """
@@ -95,7 +67,7 @@ def real_time_anomaly_detection(model_arima, real_time_data, window=10, confid_i
             f"Real-time Data -> Predicted: {predicted_value:.2f}, Actual: {real_value}, Error: {error_percentage:.2f}%"
         )
 
-    return predicted_value, real_value, error, error_percentage
+    return predicted_value, real_value, error, error_percentage, is_anomaly
 
 
 # Load or Train ARIMA model
@@ -120,6 +92,34 @@ def load_or_train_model(series, model_path='app/model_data/model_arima.pkl'):
         logging.info(f"Model saved to {model_path}")
     return model
 
+# NOT USED
+
+# Anomaly Detection Function
+# def detect_anomalies(df, window, confid_interval=2):
+#     """
+#     Detect anomalies in the given DataFrame based on predicted vs actual values.
+#     It calculates error and sets thresholds for anomaly detection based on a rolling window of errors.
+#     Arguments:
+#     df -- The DataFrame containing the actual and predicted data.
+#     window -- The rolling window size for calculating error metrics.
+#     confid_interval -- The confidence interval used to set the anomaly detection threshold.
+#
+#     Returns:
+#     The modified DataFrame with anomaly detection results.
+#     """
+#     df.fillna(0, inplace=True)  # Fill NaN values with 0
+#     df['error'] = df['length'] - df['predicted']  # Calculate error (actual - predicted)
+#     df['error_pct'] = (df['error'] / df['predicted']) * 100  # Calculate error percentage
+#     df['err_meanval'] = df['error'].rolling(window=window).mean()  # Rolling mean of errors
+#     df['err_deviation'] = df['error'].rolling(window=window).std()  # Rolling standard deviation of errors
+#     df['-lim'] = df['err_meanval'] - (confid_interval * df['err_deviation'])  # Lower limit for anomaly
+#     df['+lim'] = df['err_meanval'] + (confid_interval * df['err_deviation'])  # Upper limit for anomaly
+#     df['anomaly_points'] = np.where(
+#         (df['error'] > df['+lim']) | (df['error'] < df['-lim']),
+#         df['length'],
+#         np.nan
+#     )  # Mark points as anomalies if outside the limits
+#     return df
 
 # USED FOR GATHERING DATA FOR MODEL TRAINING
 #

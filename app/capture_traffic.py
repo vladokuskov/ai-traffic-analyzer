@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 
 def capture_traffic(interface='en0', duration=30):
     logging.info(f"Using interface: {interface} for {duration} seconds.")
-    packets = sniff(iface=interface, timeout=duration)
+    packets = sniff(iface=interface, timeout=duration, filter="tcp or udp")
     logging.info(f"Intercepting done. Received {len(packets)} packets.")
     return packets
 
