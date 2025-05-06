@@ -6,6 +6,7 @@ import logging
 from scapy.config import conf
 from scapy.interfaces import get_if_list
 
+from app.plot import plot_detection_results
 from detector import load_or_train_model, real_time_anomaly_detection
 from db import collection
 from scapy.all import sniff
@@ -46,25 +47,31 @@ def capture_traffic(interface=None, duration=30):
     return packets
 
 
-
-def process_data(packets):
+def process_data(packets, resample_interval='1S'):
     """
-    Process captured packets and extract relevant data for anomaly detection.
-    This function converts the captured packets into a DataFrame, extracting information
-    such as packet length, timestamp, source IP, destination IP, and protocol.
+    Process captured packets and resample into time-based intervals.
+    Returns a DataFrame with resampled statistics (mean packet length per second).
     """
     rows = []
     for packet in packets:
         if packet.haslayer(IP):
             packet_info = {
                 'packet_length': len(packet),
-                'timestamp': packet.time,
-                'source_ip': packet[IP].src,
-                'destination_ip': packet[IP].dst,
-                'protocol': packet[IP].proto
+                'timestamp': datetime.fromtimestamp(packet.time)  # Convert to datetime
             }
             rows.append(packet_info)
-    return pd.DataFrame(rows)
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+
+    df.set_index('timestamp', inplace=True)
+
+    # Resample by the specified time interval (e.g., 1 second)
+    resampled_df = df['packet_length'].resample(resample_interval).mean().fillna(0).to_frame()
+
+    return resampled_df
+
 
 def run_detection(interface, duration=30):
     """
@@ -76,8 +83,11 @@ def run_detection(interface, duration=30):
     # Capture real-time traffic
     captured_packets = capture_traffic(interface, duration)
 
-    # Process the captured packets into a DataFrame
-    real_time_data = process_data(captured_packets)
+    # Resample into 1-second intervals (mean packet length)
+    real_time_data = process_data(captured_packets, resample_interval='1S')
+    if real_time_data.empty or len(real_time_data) < 2:
+        logging.warning("Not enough data for detection.")
+        return
 
     # Load or train the ARIMA model
     model = load_or_train_model(real_time_data['packet_length'], 'model_data/model_arima.pkl')
@@ -86,7 +96,7 @@ def run_detection(interface, duration=30):
     pred, real, err, err_pct, is_anomaly = real_time_anomaly_detection(model, real_time_data)
 
     # ONLY FOR DEBUG
-   #  plot_detection_results(real_time_data, predicted_values=pred, is_anomaly=is_anomaly)
+    plot_detection_results(real_time_data, predicted_values=pred, is_anomaly=is_anomaly)
 
     # Prepare document for MongoDB, ensuring values are in native Python types
     doc = {
