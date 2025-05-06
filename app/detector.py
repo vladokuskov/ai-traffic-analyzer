@@ -49,7 +49,7 @@ def real_time_anomaly_detection(model_arima, real_time_data, window=30, confid_i
     # Check if anomaly
     is_anomaly = False
 
-    fallback_error_pct = 20  # Fallback percentage if standard deviation is zero
+    fallback_error_pct = 50  # Fallback percentage if standard deviation is zero
 
     if std_dev > 0:
         # If standard deviation is greater than 0, use it for thresholding
